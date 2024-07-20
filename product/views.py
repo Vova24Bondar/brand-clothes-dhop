@@ -12,6 +12,7 @@ from django.conf import settings
 
 
 class ProductCreateView(View):
+    @method_decorator(admin_only)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         chat_id = data.get('message').get('chat').get('id')
@@ -130,9 +131,8 @@ class ProductCreateView(View):
                 return JsonResponse({'error': str(e)}, status=500)
 
 
-
-
 class ProductDeleteView(View):
+    @method_decorator(admin_only)
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         chat_id = data.get('message', {}).get('chat', {}).get('id')

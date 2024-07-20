@@ -20,5 +20,5 @@ from user.views import hello_world, TelegramBotWebhook
 # from product.views import product_create, product_delete
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', TelegramBotWebhook.as_view(), name='main_logik')
+    path('', hello_world, name='main_logik')
 ]

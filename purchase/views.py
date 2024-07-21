@@ -25,7 +25,7 @@ class PurchaseCreateView(View):
         if step == 1:
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Будь ласка, введіть ID товару який ви хочете придбати'
+                'text': 'Будь ласка, введіть ID товару який ви хочете придбати(не натискайте на іншу команду поки не завершите виконання цієї)'
             }
             cache.set(f'{chat_id}_step', 2)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -35,7 +35,7 @@ class PurchaseCreateView(View):
             cache.set(f'{chat_id}_product_id', text)
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Будь ласка, введіть кількість товару яку ви хочете придбати'
+                'text': 'Будь ласка, введіть кількість товару яку ви хочете придбати(не натискайте на іншу команду поки не завершите виконання цієї)'
             }
             cache.set(f'{chat_id}_step', 3)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)

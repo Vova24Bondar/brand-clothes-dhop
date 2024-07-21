@@ -22,7 +22,7 @@ class ProductCreateView(View):
         if step == 1:
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Please enter ONE image of your product.'
+                'text': f'Будь ласка, відправте одну фотграфію вашого товару.(не натискайте на іншу команду поки не завершите виконання цієї)'
             }
             cache.set(f'{chat_id}_step', 2)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -35,7 +35,7 @@ class ProductCreateView(View):
                     cache.set(f'{chat_id}_image', file_id)
                     response_data = {
                         'chat_id': chat_id,
-                        'text': 'Please enter the name of your product.'
+                        'text': f'Будь ласка, введіть назву товару(не натискайте на іншу команду поки не завершите виконання цієї)'
                     }
                     cache.set(f'{chat_id}_step', 3)
                     requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -43,7 +43,7 @@ class ProductCreateView(View):
                 except Exception as e:
                     response_data = {
                         'chat_id': chat_id,
-                        'text': 'Please send ONE image of your product'
+                        'text': f'Будь ласка, відправте ОДНУ фотографію товару(не натискайте на іншу команду поки не завершите виконання цієї)'
                     }
                     requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                     cache.set(f'{chat_id}_step', 1)
@@ -52,7 +52,7 @@ class ProductCreateView(View):
             else:
                 response_data = {
                     'chat_id': chat_id,
-                    'text': 'Invalid input. Please send image of your product.'
+                    'text': f'Невірний ввід. Будь ласка, відправте фотографію для свого товару.(не натискайте на іншу команду поки не завершите виконання цієї)'
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.set(f'{chat_id}_step', 1)
@@ -63,7 +63,7 @@ class ProductCreateView(View):
             cache.set(f'{chat_id}_name', text)
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Please enter the description of your product.'
+                'text': f'Будь ласка, введіть опис товару.(не натискайте на іншу команду поки не завершите виконання цієї)'
             }
             cache.set(f'{chat_id}_step', 4)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -73,7 +73,7 @@ class ProductCreateView(View):
             cache.set(f'{chat_id}_description', text)
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Please enter the number of goods for your product.'
+                'text': f'Будь ласка, введіть кількістьь товару у наявності.(не натискайте на іншу команду поки не завершите виконання цієї)'
             }
             cache.set(f'{chat_id}_step', 5)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -83,7 +83,7 @@ class ProductCreateView(View):
             cache.set(f'{chat_id}_number_of_goods', text)
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Please enter the price for your product.'
+                'text': f'Будь ласка, введіть ціну для свого продукта.(не натискайте на іншу команду поки не завершите виконання цієї)'
             }
             cache.set(f'{chat_id}_step', 6)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -101,7 +101,7 @@ class ProductCreateView(View):
             except ValueError:
                 response_data = {
                     'chat_id': chat_id,
-                    'text': 'Invalid input. Please enter a valid numeric price when you will make a product.'
+                    'text': f'Невірний ввід. Будь ласка, в наступний раз введіть валідну циформу ціну(не натискайте на іншу команду поки не завершите виконання цієї)'
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many(
@@ -131,7 +131,7 @@ class ProductCreateView(View):
             except Exception as e:
                 response_data = {
                     'chat_id': chat_id,
-                    'text': 'PLEASE, SEND ONE IMAGE'
+                    'text': 'Будь ласка, надішліть лише одну фотографію'
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many(
@@ -153,7 +153,7 @@ class ProductUpdateView(View):
         if step == 1:
             response_data = {
                 'chat_id': chat_id,
-                'text': "Буль ласка, введіть ID товару який ви хочете змінити"
+                'text': f"Буль ласка, введіть ID товару який ви хочете змінити(не натискайте на іншу команду поки не завершите виконання цієї)"
             }
             cache.set(f'{chat_id}_step', 2)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -179,7 +179,7 @@ class ProductUpdateView(View):
             cache.set(f'{chat_id}_update_field', text)
             response_data = {
                 'chat_id': chat_id,
-                'text': f"Буль ласка, відправте нове значення для поля {text}"
+                'text': f"Буль ласка, відправте нове значення для поля {text}(не натискайте на іншу команду поки не завершите виконання цієї)"
             }
             cache.set(f'{chat_id}_step', 4)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -243,7 +243,7 @@ class ProductUpdateView(View):
         else:
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Unknown command. Please try again.'
+                'text': 'Невідома команді. Будь ласка, спробуйте ще раз.'
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
             return JsonResponse({'error': 'Unknown command'}, status=400)
@@ -259,7 +259,7 @@ class ProductDeleteView(View):
         if step == 1:
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Please enter the ID of the product you want to delete.'
+                'text': f'Будь ласка, введіть ID товару який ви хочете оновити.(не натискайте на іншу команду поки не завершите виконання цієї)'
             }
             cache.set(f'{chat_id}_step', 2)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -275,13 +275,13 @@ class ProductDeleteView(View):
                     product.delete()
                     response_data = {
                         'chat_id': chat_id,
-                        'text': 'Product successfully deleted.'
+                        'text': 'Товар успішно видалений'
                     }
                     requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 else:
                     response_data = {
                         'chat_id': chat_id,
-                        'text': 'There is no product with this ID.'
+                        'text': 'Товар з таким ID відсутній'
                     }
                     requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
 
@@ -290,7 +290,7 @@ class ProductDeleteView(View):
             except ValueError:
                 response_data = {
                     'chat_id': chat_id,
-                    'text': 'Invalid ID format. Please enter a numeric ID.'
+                    'text': 'Невірний формат ID. Будь ласка, введіть вірний числовий формат ID'
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many([f'{chat_id}_id', f'{chat_id}_step'])
@@ -306,7 +306,7 @@ class ProductDeleteView(View):
 
         response_data = {
             'chat_id': chat_id,
-            'text': 'Unknown command or process already completed.'
+            'text': 'Невідома команда, або процес вже завершений'
         }
         requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
         cache.delete_many([f'{chat_id}_id', f'{chat_id}_step'])
@@ -323,7 +323,7 @@ class ProductListView(View):
         if not products.exists():
             response_data = {
                 'chat_id': chat_id,
-                'text': 'No products available at the moment.'
+                'text': 'Наразі, немає товарів у наявності.'
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
             return JsonResponse({'message': 'No products available'}, status=200)

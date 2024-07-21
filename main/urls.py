@@ -19,5 +19,5 @@ from django.urls import path
 from user.views import hello_world, TelegramBotWebhook
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', hello_world, name='main_logik')
+    path('', TelegramBotWebhook.as_view(), name='main_logik')
 ]

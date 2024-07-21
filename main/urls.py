@@ -17,7 +17,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from user.views import hello_world, TelegramBotWebhook
-# from product.views import product_create, product_delete
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', hello_world, name='main_logik')

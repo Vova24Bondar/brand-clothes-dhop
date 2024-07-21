@@ -6,9 +6,11 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 import os
-from product.views import ProductCreateView, ProductDeleteView, ProductListView
+from product.views import ProductCreateView, ProductDeleteView, ProductListView, ProductUpdateView
+from purchase.views import PurchaseCreateView, PurchaseListView
 from django.views import View
 from django.conf import settings
+
 
 
 class TelegramBotWebhook(View):
@@ -21,6 +23,8 @@ class TelegramBotWebhook(View):
 
             if text and text.startswith('/product_create'):
                 return self.handle_product_create(request, chat_id, data)
+            elif text and text.startswith('/product_update'):
+                return self.handle_product_update(request, chat_id, data)
             elif text and text.startswith('/product_delete'):
                 return self.handle_product_delete(request, chat_id, data)
             elif text and text.startswith('/product_list'):
@@ -29,17 +33,27 @@ class TelegramBotWebhook(View):
                 return self.handle_commands_list(request, chat_id, data)
             elif text and text.startswith('/start'):
                 return self.handle_start_bot(request, chat_id, data)
+            elif text and text.startswith('/purchase_create'):
+                return self.handle_purchase_create(request, chat_id, data)
+            elif text and text.startswith('/purchase_list'):
+                return self.handle_purchase_list(request, chat_id, data)
             else:
                 cache.set(f'{chat_id}_restart', 2)
                 step = cache.get(f'{chat_id}_step')
                 if step:
                     command = cache.get(f'{chat_id}_command', '')
-                    if 'create' in command:
+                    if 'product_create' in command:
                         return self.handle_product_create(request, chat_id, data)
-                    elif 'delete' in command:
+                    elif 'product_update' in command:
+                        return self.handle_product_update(request, chat_id, data)
+                    elif 'product_delete' in command:
                         return self.handle_product_delete(request, chat_id, data)
-                    elif 'list' in command:
+                    elif 'product_list' in command:
                         return self.handle_product_list(request, chat_id, data)
+                    elif 'purchase_create' in command:
+                        return self.handle_purchase_create(request, chat_id, data)
+                    elif 'purchase_list' in command:
+                        return self.handle_purchase_list(request, chat_id, data)
                     else:
                         self.send_message(chat_id, 'Invalid input. Please try again.')
                         return JsonResponse({'message': 'Invalid input'}, status=400)
@@ -56,6 +70,12 @@ class TelegramBotWebhook(View):
         request._body = json.dumps(data)
         return product_create_view.post(request)
 
+    def handle_product_update(self, request, chat_id, data):
+        cache.set(f'{chat_id}_command', 'product_update')
+        product_update_view = ProductUpdateView()
+        request._body = json.dumps(data)
+        return product_update_view.post(request)
+
     def handle_product_delete(self, request, chat_id, data):
         cache.set(f'{chat_id}_command', 'product_delete')
         product_delete_view = ProductDeleteView()
@@ -68,12 +88,24 @@ class TelegramBotWebhook(View):
         request._body = json.dumps(data)
         return product_list_view.post(request)
 
+    def handle_purchase_create(self, request, chat_id, data):
+        cache.set(f'{chat_id}_command', 'purchase_create')
+        purchase_create_view = PurchaseCreateView()
+        request._body = json.dumps(data)
+        return purchase_create_view.post(request)
+
+    def handle_purchase_list(self, request, chat_id, data):
+        cache.set(f'{chat_id}_command', 'purchase_list')
+        purchase_list_view = PurchaseListView()
+        request._body = json.dumps(data)
+        return purchase_list_view.post(request)
+
     def handle_commands_list(self, request, chat_id, data):
         data = json.loads(request.body)
         chat_id = data.get('message').get('chat').get('id')
         response_data = {
             'chat_id': chat_id,
-            'text': f'List of commands:\n/start\n/commands\n/product_list\n/product_create\n/product_delete'
+            'text': f'List of commands:\n/start\n/commands\n/product_create\n/product_update\n/product_delete\n/product_list\n/purchase_create\n/purchase_list'
         }
         requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
         return JsonResponse({'message': 'ok'}, status=200)
@@ -81,9 +113,11 @@ class TelegramBotWebhook(View):
     def handle_start_bot(self, request, chat_id, data):
         user_data = data.get('message', {}).get('from', {})
         username = user_data.get('username')
-        user = User.objects.filter(username=username).first()
+        data = json.loads(request.body)
+        chat_id = data.get('message').get('chat').get('id')
+        user = User.objects.filter(chat_id=chat_id)
 
-        if user:
+        if user.exists():
             response_text = ('Вітаю.\nВи потрапили до телеграм бота Brand Clothes.\n'
                              'Тут ви можете придбати найкращий брендовий одяг.\n'
                              'Також ви можете подивитися функціонал бота за командою /commands')
@@ -92,7 +126,8 @@ class TelegramBotWebhook(View):
                 username=username,
                 first_name=user_data.get('first_name', ''),
                 last_name=user_data.get('last_name', ''),
-                password=make_password(username)
+                password=make_password(username),
+                chat_id=chat_id
             )
             response_text = ('Вітаю.\nВи потрапили до телеграм бота Brand Clothes.\n'
                              'Тут ви можете придбати найкращий брендовий одяг.\n'
@@ -126,7 +161,7 @@ def hello_world(request):
             chat_id = data.get('message').get('chat').get('id')
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Hello, World!'
+                'text': f'Просимо вибачення за принесені незручності.\nНаразі, бот працює справно і готовий до використання.'
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
             return JsonResponse({'message': 'ok'}, status=200)

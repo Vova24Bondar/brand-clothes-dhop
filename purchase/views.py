@@ -42,7 +42,7 @@ class PurchaseCreateView(View):
                 }
                 cache.set(f'{chat_id}_step', 2)
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-                return JsonResponse({'message': 'ID requested successfully'}, status=200)
+                return JsonResponse({'message': 'ID requested successfully'})
 
         elif step == 2:
             cache.set(f'{chat_id}_product_id', text)
@@ -52,7 +52,7 @@ class PurchaseCreateView(View):
             }
             cache.set(f'{chat_id}_step', 3)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'Quantity requested successfully'}, status=200)
+            return JsonResponse({'message': 'Quantity requested successfully'})
 
         elif step == 3:
             cache.set(f'{chat_id}_quantity', text)
@@ -80,7 +80,7 @@ class PurchaseCreateView(View):
 
                 cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
 
-                return JsonResponse({'message': 'Purchase created successfully'}, status=200)
+                return JsonResponse({'message': 'Purchase created successfully'})
 
             except User.DoesNotExist:
                 response_data = {
@@ -89,7 +89,7 @@ class PurchaseCreateView(View):
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
-                return JsonResponse({'message': 'User not found'}, status=400)
+                return JsonResponse({'message': 'User not found'})
 
             except Product.DoesNotExist:
                 response_data = {
@@ -98,7 +98,7 @@ class PurchaseCreateView(View):
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
-                return JsonResponse({'message': 'Product not found'}, status=400)
+                return JsonResponse({'message': 'Product not found'})
 
             except ValueError as e:
                 response_data = {
@@ -106,7 +106,7 @@ class PurchaseCreateView(View):
                     'text': str(e)
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-                return JsonResponse({'message': 'Invalid quantity'}, status=400)
+                return JsonResponse({'message': 'Invalid quantity'})
 
         else:
             response_data = {
@@ -115,7 +115,7 @@ class PurchaseCreateView(View):
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
             cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
-            return JsonResponse({'message': 'Unknown step'}, status=400)
+            return JsonResponse({'message': 'Unknown step'})
 
 
 class PurchaseListView(View):
@@ -132,7 +132,7 @@ class PurchaseListView(View):
                 'text': 'Користувача не знайдено.'
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'error': 'User not found'}, status=400)
+            return JsonResponse({'error': 'User not found'})
 
         purchases = Purchase.objects.filter(user_id=user_id)
 
@@ -142,7 +142,7 @@ class PurchaseListView(View):
                 'text': 'Наразі, у вас немає покупок.'
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'No purchases available'}, status=200)
+            return JsonResponse({'message': 'No purchases available'})
 
         for purchase in purchases:
             product = purchase.product_id
@@ -157,4 +157,4 @@ class PurchaseListView(View):
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendPhoto', data=photo_data)
 
-        return JsonResponse({'message': 'Purchases sent successfully'}, status=200)
+        return JsonResponse({'message': 'Purchases sent successfully'})

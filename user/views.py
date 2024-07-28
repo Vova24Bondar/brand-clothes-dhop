@@ -134,7 +134,7 @@ class TelegramBotWebhook(View):
             'text': f'List of commands:\n/start\n/commands\n/product_create\n/product_update\n/product_delete\n/product_list\n/purchase_create\n/purchase_list'
         }
         requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-        return JsonResponse({'message': 'ok'}, status=200)
+        return JsonResponse({'message': 'ok'})
 
     def handle_start_bot(self, request, chat_id, data):
         user_data = data.get('message', {}).get('from', {})
@@ -160,7 +160,7 @@ class TelegramBotWebhook(View):
                              'Також ви можете подивитися функціонал бота за командою /commands')
 
         self.send_message(chat_id, response_text)
-        return JsonResponse({'message': 'ok'}, status=200)
+        return JsonResponse({'message': 'ok'})
 
     def handle_unknown_command(self, request, chat_id):
         self.send_message(chat_id, 'Unknown command. Please try again.')
@@ -190,8 +190,8 @@ def hello_world(request):
                 'text': f'Просимо вибачення за принесені незручності.\nНаразі, бот працює справно і готовий до використання.'
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'ok'}, status=200)
+            return JsonResponse({'message': 'ok'})
         except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+            return JsonResponse({'error': 'Invalid JSON'})
     else:
         return HttpResponse("Hello world")

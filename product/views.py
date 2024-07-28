@@ -27,7 +27,7 @@ class ProductCreateView(View):
             }
             cache.set(f'{chat_id}_step', 2)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'Image requested successfully'}, status=200)
+            return JsonResponse({'message': 'Image requested successfully'})
 
         elif step == 2:
             if 'photo' in data.get('message') and len(photo) <= 4:
@@ -40,7 +40,7 @@ class ProductCreateView(View):
                     }
                     cache.set(f'{chat_id}_step', 3)
                     requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-                    return JsonResponse({'message': 'Name requested successfully'}, status=200)
+                    return JsonResponse({'message': 'Name requested successfully'})
                 except Exception as e:
                     response_data = {
                         'chat_id': chat_id,
@@ -49,7 +49,7 @@ class ProductCreateView(View):
                     requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                     cache.set(f'{chat_id}_step', 1)
                     cache.delete_many([f'{chat_id}_image'])
-                    return JsonResponse({'error': str(e)}, status=500)
+                    return JsonResponse({'error': str(e)})
             else:
                 response_data = {
                     'chat_id': chat_id,
@@ -58,7 +58,7 @@ class ProductCreateView(View):
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.set(f'{chat_id}_step', 1)
                 cache.delete_many([f'{chat_id}_image'])
-                return JsonResponse({'error': 'Image not provided'}, status=400)
+                return JsonResponse({'error': 'Image not provided'})
 
         elif step == 3:
             cache.set(f'{chat_id}_name', text)
@@ -68,7 +68,7 @@ class ProductCreateView(View):
             }
             cache.set(f'{chat_id}_step', 4)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'Description requested successfully'}, status=200)
+            return JsonResponse({'message': 'Description requested successfully'})
 
         elif step == 4:
             cache.set(f'{chat_id}_description', text)
@@ -78,7 +78,7 @@ class ProductCreateView(View):
             }
             cache.set(f'{chat_id}_step', 5)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'number_of_goods requested successfully'}, status=200)
+            return JsonResponse({'message': 'number_of_goods requested successfully'})
 
         elif step == 5:
             cache.set(f'{chat_id}_number_of_goods', text)
@@ -88,7 +88,7 @@ class ProductCreateView(View):
             }
             cache.set(f'{chat_id}_step', 6)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'Price requested successfully'}, status=200)
+            return JsonResponse({'message': 'Price requested successfully'})
 
         elif step == 6:
             try:
@@ -108,7 +108,7 @@ class ProductCreateView(View):
                 cache.delete_many(
                     [f'{chat_id}_image', f'{chat_id}_name', f'{chat_id}_description', f'{chat_id}_price',
                      f'{chat_id}_step', f'{chat_id}_number_of_goods'])
-                return JsonResponse({'error': 'Invalid price'}, status=400)
+                return JsonResponse({'error': 'Invalid price'})
 
             try:
                 product = Product.objects.create(
@@ -138,7 +138,7 @@ class ProductCreateView(View):
                 cache.delete_many(
                     [f'{chat_id}_image', f'{chat_id}_name', f'{chat_id}_description', f'{chat_id}_price',
                      f'{chat_id}_step', f'{chat_id}_number_of_goods'])
-                return JsonResponse({'error': str(e)}, status=500)
+                return JsonResponse({'error': str(e)})
 
 
 @apply_class_decorator(admin_only)
@@ -175,7 +175,7 @@ class ProductUpdateView(View):
             }
             cache.set(f'{chat_id}_step', 3)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'request created successfully'}, status=200)
+            return JsonResponse({'message': 'request created successfully'})
 
         elif step == 3:
             cache.set(f'{chat_id}_update_field', text)
@@ -185,7 +185,7 @@ class ProductUpdateView(View):
             }
             cache.set(f'{chat_id}_step', 4)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'request created successfully'}, status=200)
+            return JsonResponse({'message': 'request created successfully'})
 
         elif step == 4:
             product_id = cache.get(f'{chat_id}_product_id')
@@ -203,7 +203,7 @@ class ProductUpdateView(View):
                         }
                         requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                         cache.set(f'{chat_id}_step', 3)
-                        return JsonResponse({'error': str(e)}, status=500)
+                        return JsonResponse({'error': str(e)})
                 else:
                     response_data = {
                         'chat_id': chat_id,
@@ -211,7 +211,7 @@ class ProductUpdateView(View):
                     }
                     requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                     cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_update_field'])
-                    return JsonResponse({'error': 'No photo provided'}, status=400)
+                    return JsonResponse({'error': 'No photo provided'})
             else:
                 update_value = text
 
@@ -224,7 +224,7 @@ class ProductUpdateView(View):
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_update_field'])
-                return JsonResponse({'message': 'Product updated successfully'}, status=200)
+                return JsonResponse({'message': 'Product updated successfully'})
 
             except ValueError:
                 response_data = {
@@ -232,7 +232,7 @@ class ProductUpdateView(View):
                     'text': "Сталася помилка під час оновлення продукту. Спробуйте ще раз."
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-                return JsonResponse({'error': 'Invalid input value'}, status=400)
+                return JsonResponse({'error': 'Invalid input value'})
 
             except Exception as e:
                 response_data = {
@@ -240,7 +240,7 @@ class ProductUpdateView(View):
                     'text': "Сталася помилка під час оновлення продукту. Спробуйте ще раз."
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-                return JsonResponse({'error': str(e)}, status=500)
+                return JsonResponse({'error': str(e)})
 
         else:
             response_data = {
@@ -248,7 +248,7 @@ class ProductUpdateView(View):
                 'text': 'Невідома команді. Будь ласка, спробуйте ще раз.'
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'error': 'Unknown command'}, status=400)
+            return JsonResponse({'error': 'Unknown command'})
 
 
 @apply_class_decorator(admin_only)
@@ -266,7 +266,7 @@ class ProductDeleteView(View):
             }
             cache.set(f'{chat_id}_step', 2)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'ID requested successfully'}, status=200)
+            return JsonResponse({'message': 'ID requested successfully'})
 
         elif step == 2:
             cache.set(f'{chat_id}_id', text)
@@ -297,7 +297,7 @@ class ProductDeleteView(View):
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many([f'{chat_id}_id', f'{chat_id}_step'])
-                return JsonResponse({'error': 'Invalid ID format'}, status=400)
+                return JsonResponse({'error': 'Invalid ID format'})
             except Exception as e:
                 response_data = {
                     'chat_id': chat_id,
@@ -305,7 +305,7 @@ class ProductDeleteView(View):
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many([f'{chat_id}_id', f'{chat_id}_step'])
-                return JsonResponse({'error': str(e)}, status=500)
+                return JsonResponse({'error': str(e)})
 
         response_data = {
             'chat_id': chat_id,
@@ -313,7 +313,7 @@ class ProductDeleteView(View):
         }
         requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
         cache.delete_many([f'{chat_id}_id', f'{chat_id}_step'])
-        return JsonResponse({'message': 'Unknown command or process completed'}, status=400)
+        return JsonResponse({'message': 'Unknown command or process completed'})
 
 
 class ProductListView(View):
@@ -329,7 +329,7 @@ class ProductListView(View):
                 'text': 'Наразі, немає товарів у наявності.'
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'No products available'}, status=200)
+            return JsonResponse({'message': 'No products available'})
 
         for product in products:
             photo_data = {
@@ -345,4 +345,4 @@ class ProductListView(View):
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendPhoto', data=photo_data)
 
-        return JsonResponse({'message': 'Products sent successfully'}, status=200)
+        return JsonResponse({'message': 'Products sent successfully'})

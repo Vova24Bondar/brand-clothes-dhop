@@ -7,8 +7,9 @@ from django.views import View
 from django.utils.decorators import method_decorator
 from product.decorators import admin_only
 from django.conf import settings
+from product.decorators import apply_class_decorator
 
-
+@apply_class_decorator(admin_only)
 class ProductCreateView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -73,7 +74,7 @@ class ProductCreateView(View):
             cache.set(f'{chat_id}_description', text)
             response_data = {
                 'chat_id': chat_id,
-                'text': f'Будь ласка, введіть кількістьь товару у наявності.(не натискайте на іншу команду поки не завершите виконання цієї)'
+                'text': f'Будь ласка, введіть кількість товару у наявності.(не натискайте на іншу команду поки не завершите виконання цієї)'
             }
             cache.set(f'{chat_id}_step', 5)
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
@@ -140,6 +141,7 @@ class ProductCreateView(View):
                 return JsonResponse({'error': str(e)}, status=500)
 
 
+@apply_class_decorator(admin_only)
 class ProductUpdateView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -249,6 +251,7 @@ class ProductUpdateView(View):
             return JsonResponse({'error': 'Unknown command'}, status=400)
 
 
+@apply_class_decorator(admin_only)
 class ProductDeleteView(View):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -332,7 +335,13 @@ class ProductListView(View):
             photo_data = {
                 'chat_id': chat_id,
                 'photo': product.image,
-                'caption': f"ID: {product.id}\nName: {product.name}\nDescription: {product.description}\nNumber of goods: {product.number_of_goods}\nPrice: {product.price}UAH"
+                'caption': f"ID: {product.id}\nName: {product.name}\nDescription: {product.description}\nNumber of goods: {product.number_of_goods}\nPrice: {product.price}UAH",
+                'reply_markup': json.dumps({
+                    'inline_keyboard': [[{
+                        'text': 'Купити товар',
+                        'callback_data': f'buy_{product.id}'
+                    }]]
+                })
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendPhoto', data=photo_data)
 

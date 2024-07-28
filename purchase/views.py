@@ -8,6 +8,8 @@ from django.conf import settings
 from user.models import User
 from product.models import Product
 from purchase.models import Purchase
+from product.decorators import admin_only
+
 
 
 class PurchaseCreateView(View):
@@ -23,13 +25,24 @@ class PurchaseCreateView(View):
         step = cache.get(f'{chat_id}_step', 1)
 
         if step == 1:
-            response_data = {
-                'chat_id': chat_id,
-                'text': 'Будь ласка, введіть ID товару який ви хочете придбати(не натискайте на іншу команду поки не завершите виконання цієї)'
-            }
-            cache.set(f'{chat_id}_step', 2)
-            requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-            return JsonResponse({'message': 'ID requested successfully'}, status=200)
+            product_id = text if text.isdigit() else cache.get(f'{chat_id}_product_id')
+            if product_id:
+                cache.set(f'{chat_id}_product_id', product_id)
+                response_data = {
+                    'chat_id': chat_id,
+                    'text': 'Будь ласка, введіть кількість товару яку ви хочете придбати(не натискайте на іншу команду поки не завершите виконання цієї)'
+                }
+                cache.set(f'{chat_id}_step', 3)
+                requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
+                return JsonResponse({'message': 'Quantity requested successfully'}, status=200)
+            else:
+                response_data = {
+                    'chat_id': chat_id,
+                    'text': 'Будь ласка, введіть ID товару який ви хочете придбати(не натискайте на іншу команду поки не завершите виконання цієї)'
+                }
+                cache.set(f'{chat_id}_step', 2)
+                requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
+                return JsonResponse({'message': 'ID requested successfully'}, status=200)
 
         elif step == 2:
             cache.set(f'{chat_id}_product_id', text)
@@ -44,82 +57,65 @@ class PurchaseCreateView(View):
         elif step == 3:
             cache.set(f'{chat_id}_quantity', text)
             try:
-                user = User.objects.get(username=username)
-                product_id = cache.get(f'{chat_id}_product_id')
-                quantity = int(cache.get(f'{chat_id}_quantity'))
+                quantity = cache.get(f'{chat_id}_quantity')
+                if quantity <= 0:
+                    raise ValueError('Кількість товару повинна бути більше нуля.')
 
+                product_id = cache.get(f'{chat_id}_product_id')
                 product = Product.objects.get(id=product_id)
+                user, created = User.objects.get_or_create(chat_id=chat_id, defaults={'username': username})
 
                 if quantity > product.number_of_goods:
-                    raise ValueError("Insufficient quantity of goods available")
+                    raise ValueError('Недостатня кількість товару на складі.')
 
                 product.number_of_goods -= quantity
                 product.save()
 
-                purchase = Purchase.objects.create(
-                    user_id=user,
-                    product_id=product,
-                    quantity=quantity,
-                    is_done=True
-                )
-
-                photo_data = {
+                purchase = Purchase.objects.create(user=user, product=product, quantity=quantity)
+                response_data = {
                     'chat_id': chat_id,
-                    'photo': product.image,
-                    'caption': (f"Покупець: {user.username}\n"
-                                f"ID товару: {product_id}\n"
-                                f"Кількість: {purchase.quantity}\n"
-                                f"Ціна: {product.price} UAH\n"
-                                f"Статус: {purchase.is_done}")
+                    'text': 'Покупка успішно створена!'
                 }
-                requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendPhoto', data=photo_data)
+                requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
+
                 cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
+
                 return JsonResponse({'message': 'Purchase created successfully'}, status=200)
 
             except User.DoesNotExist:
                 response_data = {
                     'chat_id': chat_id,
-                    'text': 'Користувача не знайдено. Будь ласка, спробуйте пізніше.'
+                    'text': 'Користувач не знайдений. Будь ласка, зареєструйтесь спершу.'
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
-                return JsonResponse({'error': 'User not found'}, status=400)
+                return JsonResponse({'message': 'User not found'}, status=400)
 
             except Product.DoesNotExist:
                 response_data = {
                     'chat_id': chat_id,
-                    'text': 'Товар не знайдено. Будь ласка, спробуйте пізніше.'
+                    'text': 'Товар не знайдений. Будь ласка, спробуйте ще раз.'
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
                 cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
-                return JsonResponse({'error': 'Product not found'}, status=400)
+                return JsonResponse({'message': 'Product not found'}, status=400)
 
             except ValueError as e:
                 response_data = {
                     'chat_id': chat_id,
-                    'text': f'Помилка: {str(e)}. Будь ласка, спробуйте ще раз.'
+                    'text': str(e)
                 }
                 requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-                cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
-                return JsonResponse({'error': 'Invalid quantity'}, status=400)
-
-            except Exception as e:
-                response_data = {
-                    'chat_id': chat_id,
-                    'text': f'Помилка. Будь ласка, спробуйте пізніше. ({str(e)})'
-                }
-                requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
-                cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
-                return JsonResponse({'error': str(e)}, status=400)
+                return JsonResponse({'message': 'Invalid quantity'}, status=400)
 
         else:
             response_data = {
                 'chat_id': chat_id,
-                'text': 'Невідома команда. Будь ласка, спробуйте ще раз.'
+                'text': 'Невідомий крок. Будь ласка, спробуйте ще раз.'
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendMessage', json=response_data)
             cache.delete_many([f'{chat_id}_step', f'{chat_id}_product_id', f'{chat_id}_quantity'])
-            return JsonResponse({'error': 'Unknown command'}, status=400)
+            return JsonResponse({'message': 'Unknown step'}, status=400)
 
 
 class PurchaseListView(View):
@@ -154,10 +150,10 @@ class PurchaseListView(View):
                 'chat_id': chat_id,
                 'photo': product.image,
                 'caption': (f"Айді покупця: {purchase.user_id}\n"
-                         f"Айді товару: {purchase.product_id}\n"
-                         f"Кількість купленого товару: {purchase.quantity}\n"
-                         f"Дата покупки: {purchase.purchase_date}\n"
-                         f"Ціна: {product.price} UAH")
+                            f"Айді товару: {purchase.product_id}\n"
+                            f"Кількість купленого товару: {purchase.quantity}\n"
+                            f"Дата покупки: {purchase.purchase_date}\n"
+                            f"Ціна: {product.price} UAH")
             }
             requests.post(f'{settings.TG_BASE_URL}{settings.BOT_TOKEN}/sendPhoto', data=photo_data)
 

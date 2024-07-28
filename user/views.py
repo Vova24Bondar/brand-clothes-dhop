@@ -2,7 +2,6 @@ from django.http import HttpResponse, JsonResponse
 import json
 import requests
 from user.models import User
-from django.shortcuts import get_object_or_404
 from django.contrib.auth.hashers import make_password
 from django.core.cache import cache
 import os
@@ -18,8 +17,12 @@ class TelegramBotWebhook(View):
         try:
             data = json.loads(request.body)
             message = data.get('message', {})
-            chat_id = message.get('chat', {}).get('id')
-            text = message.get('text')
+            callback_query = data.get('callback_query', {})
+            chat_id = message.get('chat', {}).get('id') if message else callback_query.get('message', {}).get('chat', {}).get('id')
+            text = message.get('text') if message else callback_query.get('data')
+
+            if callback_query:
+                return self.handle_callback_query(request, chat_id, callback_query)
 
             if text and text.startswith('/product_create'):
                 return self.handle_product_create(request, chat_id, data)
@@ -56,13 +59,36 @@ class TelegramBotWebhook(View):
                         return self.handle_purchase_list(request, chat_id, data)
                     else:
                         self.send_message(chat_id, 'Invalid input. Please try again.')
-                        return JsonResponse({'message': 'Invalid input'}, status=400)
+                        return JsonResponse({'message': 'Invalid input'})
                 else:
                     self.handle_unknown_command(request, chat_id)
-                    return JsonResponse({'message': 'Unknown command'}, status=400)
+                    return JsonResponse({'message': 'Unknown command'})
         except Exception as e:
             print(f"Error: {e}")
-            return JsonResponse({'message': 'Internal Server Error'}, status=500)
+            return JsonResponse({'message': 'Internal Server Error'})
+
+    def handle_callback_query(self, request, chat_id, callback_query):
+        data = callback_query.get('data')
+        if not data or not data.startswith('buy_'):
+            self.send_message(chat_id, 'Invalid callback data.')
+            return JsonResponse({'message': 'Invalid callback data'}, status=400)
+
+        product_id = data.split('_')[1]
+        purchase_create_view = PurchaseCreateView()
+
+        new_request_data = {
+            'message': {
+                'chat': {
+                    'id': chat_id
+                },
+                'from': {
+                    'username': callback_query.get('from', {}).get('username', '')
+                },
+                'text': product_id
+            }
+        }
+        request._body = json.dumps(new_request_data)
+        return purchase_create_view.post(request)
 
     def handle_product_create(self, request, chat_id, data):
         cache.set(f'{chat_id}_command', 'product_create')
